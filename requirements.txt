@@ -1,0 +1,8 @@
+# Runtime dependencies.
+geopandas
+matplotlib
+pandas
+pillow
+pyogrio
+pyproj
+shapely

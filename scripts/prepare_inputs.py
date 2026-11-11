@@ -1,0 +1,34 @@
+"""Select matching scenes and references, then emit public inputs for each modality."""
+
+import argparse
+from pathlib import Path
+from _common import run
+from src.data_io import EXAMPLE, write_json
+from src.preparation import MODES, prepare_case, prepare_modes, check_public_inputs
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--case", type=Path, default=EXAMPLE)
+    parser.add_argument(
+        "--out", type=Path, required=True, help="Prepared case and prompt directory"
+    )
+    parser.add_argument("--mode", choices=["all", *MODES], default="geojson_exact")
+    parser.add_argument("--task", choices=["qa", "editing", "both"], default="both")
+    parser.add_argument(
+        "--per-relation", type=int, default=0, help="0 selects all; 1 selects a 28-relation preview"
+    )
+    args = parser.parse_args(argv)
+    if args.per_relation < 0:
+        parser.error("--per-relation must be nonnegative")
+    modes = MODES if args.mode == "all" else (args.mode,)
+    selection = prepare_case(args.case, args.out / "case", args.per_relation, args.task)
+    prompts = prepare_modes(args.out / "case", args.out / "prompts", modes, args.task)
+    check_public_inputs(args.out / "prompts")
+    result = {"status": "PASS", "selection": selection, "prompts": prompts}
+    write_json(args.out / "preparation.json", result)
+    return result
+
+
+if __name__ == "__main__":
+    raise SystemExit(run(main))
