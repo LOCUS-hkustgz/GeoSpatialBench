@@ -22,10 +22,10 @@ This release includes the fixed Stockholm case: 700 QA scenes, 700 independent E
 
 ## Quickstart
 
-Use Python 3.10+ and run commands from the repository root. Install dependencies if they are not already available in your environment:
+Use Python 3.10+. We recommend managing your environment with `.venv` or Conda/Miniconda. From the repository root, install dependencies and score the included predictions:
 
 ```sh
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 python scripts/evaluate.py
 ```
 
