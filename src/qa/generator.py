@@ -165,7 +165,11 @@ class QAGenerator:
                 a = self.safe_poly(r)
                 coords = list(a.exterior.coords)
                 k = 1 + i % max(1, len(coords) - 2)
-                b = Polygon(coords[k:-1] + coords[:k] + [coords[k]])
+                # Reordering the exterior must preserve every interior ring.
+                b = Polygon(
+                    coords[k:-1] + coords[:k] + [coords[k]],
+                    holes=[list(ring.coords) for ring in a.interiors],
+                )
                 sa = sb = self.record_source(r, "buildings")
             out.append(
                 self.topo_standard(
