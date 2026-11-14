@@ -13,7 +13,11 @@ def main(argv=None):
     ap.add_argument("--model", required=True)
     ap.add_argument("--base-url", required=True, help="API root including /v1 where required")
     ap.add_argument("--api-format", choices=["chat", "responses"], default="chat")
-    ap.add_argument("--key-env", default="BENCHMARK_API_KEY")
+    ap.add_argument(
+        "--key-env",
+        default="MODEL_API_KEY",
+        help="API key environment variable (default: MODEL_API_KEY)",
+    )
     ap.add_argument("--max-tokens", type=int, default=4096)
     ap.add_argument(
         "--temperature", type=float, default=None, help="Omit by default for provider compatibility"

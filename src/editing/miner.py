@@ -221,6 +221,13 @@ class CityEditMiner:
         key = (rid, tuple(f.get("source_object_id") for f in features))
         if key in self.seen:
             return False
+        origins = [f.get("_source_origin") for f in features]
+        source_frame = None
+        if any(origin is not None for origin in origins):
+            if origins[0] is None or any(origin != origins[0] for origin in origins):
+                raise ValueError("Scene features must share one projected source origin")
+            source_frame = {"crs": self.bdf.crs.to_string(), "origin": origins[0]}
+        features = [{k: v for k, v in f.items() if k != "_source_origin"} for f in features]
         n = self.counts[rid]
         tid = f"{self.task_id_prefix}{rid}-{n + 1:03d}" if self.task_id_prefix else f"{rid}_{n:03d}"
         rec: Dict[str, Any] = {
@@ -240,6 +247,8 @@ class CityEditMiner:
         }
         if extra:
             rec.update(extra)
+        if source_frame is not None:
+            rec["source_frame"] = source_frame
 
         scene = _scene_map(features)
         f0 = scene.get("F0")
@@ -275,9 +284,9 @@ class CityEditMiner:
         return True
 
     def pack(self, geoms: List[Any], rows: List[Any], fids: List[str]) -> List[Dict[str, Any]]:
-        local, _, _ = localize(geoms)
+        local, ox, oy = localize(geoms)
         return [
-            feature_record(fids[i], local[i], rows[i]["semantics"], rows[i]["fid"])
+            feature_record(fids[i], local[i], rows[i]["semantics"], rows[i]["fid"], (ox, oy))
             for i in range(len(rows))
         ]
 
@@ -1211,7 +1220,7 @@ class CityEditMiner:
             ang = _ANGLES[orientation]
             if _ang_diff(_heading_deg(line), ang) < 40:
                 continue
-            local, _, _ = localize([line])
+            local, ox, oy = localize([line])
             ln = local[0]
             start = Point(ln.coords[0])
             length = float(ln.length)
@@ -1229,7 +1238,7 @@ class CityEditMiner:
                 constraints=self._c(
                     "D06", type="directional", relation="object_orientation", value=orientation
                 ),
-                features=[feature_record("F0", ln, rrow["semantics"], rrow["fid"])],
+                features=[feature_record("F0", ln, rrow["semantics"], rrow["fid"], (ox, oy))],
                 gt=gt,
                 rel_after={"orientation": orientation},
                 extra=self._pair_extra("line"),
@@ -1470,7 +1479,7 @@ class CityEditMiner:
                 limit = max(90.0, peri * 2.8)
                 if peri >= limit * 0.55:
                     continue
-                local, _, _ = localize([subj])
+                local, ox, oy = localize([subj])
                 factor = (limit + 2.0) / peri
                 gt = affinity.scale(local[0], xfact=factor, yfact=factor, origin=local[0].centroid)
                 if float(gt.boundary.length) < limit:
@@ -1482,7 +1491,9 @@ class CityEditMiner:
                     constraints=self._c(
                         "M12", type="metric", metric="perimeter", op=">=", value=limit, unit="m"
                     ),
-                    features=[feature_record("F0", local[0], srow["semantics"], srow["fid"])],
+                    features=[
+                        feature_record("F0", local[0], srow["semantics"], srow["fid"], (ox, oy))
+                    ],
                     gt=gt,
                     rel_after={"perimeter_m": float(gt.boundary.length)},
                     extra=self._pair_extra(pair),
@@ -1992,9 +2003,9 @@ class CityEditMiner:
             other = self.rdf.iloc[(i + 1) % len(self.rdf)]
             if other["fid"] == rrow["fid"]:
                 continue
-            local, _, _ = localize([rrow.geometry, other.geometry])
-            f0f = feature_record("F0", local[0], rrow["semantics"], rrow["fid"])
-            f1f = feature_record("F1", local[1], other["semantics"], other["fid"])
+            local, ox, oy = localize([rrow.geometry, other.geometry])
+            f0f = feature_record("F0", local[0], rrow["semantics"], rrow["fid"], (ox, oy))
+            f1f = feature_record("F1", local[1], other["semantics"], other["fid"], (ox, oy))
             f0f["semantics"]["layer"] = 0
             f1f["semantics"]["layer"] = 1
             self.add(

@@ -234,7 +234,7 @@ def run_inference(args):
                 record.update(
                     {
                         key: row[key]
-                        for key in ("image_sha256", "frame_sha256", "renderer")
+                        for key in ("image_sha256", "frame_sha256", "renderer", "basemap")
                         if key in row
                     }
                 )

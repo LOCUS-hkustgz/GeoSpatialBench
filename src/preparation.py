@@ -80,14 +80,30 @@ def prepare_case(source, target, per_relation, task="both"):
     return selection
 
 
-def prepare_modes(case, prompt_root, modes, task="both"):
+def prepare_modes(
+    case,
+    prompt_root,
+    modes,
+    task="both",
+    basemap="none",
+    basemap_style=None,
+    basemap_zoom=19,
+    basemap_cache=None,
+):
     from .rendering import render_case
 
     case, prompt_root = Path(case), Path(prompt_root)
     if any(mode not in MODES for mode in modes):
         raise ValueError("Unknown input modality")
     if any(mode != "geojson_exact" for mode in modes):
-        render_case(case, task)
+        render_case(
+            case,
+            task,
+            basemap=basemap,
+            basemap_style=basemap_style,
+            basemap_zoom=basemap_zoom,
+            basemap_cache=basemap_cache,
+        )
     result = {}
     for mode in modes:
         target = prompt_root / mode

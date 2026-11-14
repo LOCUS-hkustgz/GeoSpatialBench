@@ -1,8 +1,10 @@
 # Runtime dependencies.
 geopandas
 matplotlib
+numpy
 pandas
 pillow
 pyogrio
 pyproj
+python-dotenv
 shapely

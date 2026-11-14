@@ -67,6 +67,8 @@ If `read_bbox` is used, it is interpreted in the **source CRS**, per role. For d
 
 QA uses projected coordinates. Editing recentres each scene into a local metric frame. The local frame is not EPSG:4326 GeoJSON; coordinate units are stated in the prompt. Do not reproject the editing coordinates as if they were longitude/latitude.
 
+Newly generated Editing tasks retain `source_frame`, for example `{"crs":"EPSG:3006","origin":[672500,6580000]}`. Source coordinates equal task coordinates plus this origin; the translation does not change task geometry or scoring. Basemap rendering uses this metadata, but model messages do not contain it. The fixed historical Editing case has no recorded origin and remains usable without a basemap; geographic placement requires verified source-frame metadata. The renderer never guesses a city centre or uses reference edits to locate a scene.
+
 ## What gets constructed
 
 The 28 relations comprise T9 + D5 + M8 + O6. Their IDs are defined in `src/relations.py`; definitions and the four deferred relations are described in [the benchmark protocol](PROTOCOL.md#relations). QA uses observed geometries and source-derived controlled constructions. Editing uses a separate miner and scene pool, rejects already-satisfied targets during mining, and checks a feasible reference edit. Reference edits are not necessarily unique.

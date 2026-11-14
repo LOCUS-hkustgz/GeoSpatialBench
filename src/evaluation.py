@@ -44,6 +44,19 @@ def save(report, details, out):
     return report
 
 
+def input_conditions(predictions):
+    """Summarize map conditions without copying per-scene geographic frames."""
+    conditions = set()
+    for row in predictions:
+        if row.get("renderer"):
+            basemap = row.get("basemap") or {}
+            conditions.add((row["renderer"], basemap.get("provider"), basemap.get("style")))
+    return [
+        dict(renderer=renderer, provider=provider, style=style)
+        for renderer, provider, style in sorted(conditions, key=str)
+    ]
+
+
 def evaluate_qa(
     items_path,
     gold_path,
@@ -117,6 +130,8 @@ def evaluate_qa(
         "assessed": len(assessed),
         "compliant": sum(r["format_compliant"] is True for r in assessed),
     }
+    if conditions := input_conditions(pred.values()):
+        report["input_conditions"] = conditions
     return save(report, details, out)
 
 
@@ -192,16 +207,15 @@ def evaluate_editing(tasks_path, predictions_path, out, allow_partial=False, ras
                 "error": error,
             }
         )
-    return save(
-        {
-            "task": "Editing",
-            "metric": "raster_tolerant_success" if raster else "strict_CSR",
-            "scoring_version": "explicit_direction_and_declared_tolerance_20260910_no_gold_layer",
-            "complete": not missing,
-            "missing_predictions": len(missing),
-            **stats(details),
-            "source_sha256": {"tasks": sha256(tasks_path), "predictions": sha256(predictions_path)},
-        },
-        details,
-        out,
-    )
+    report = {
+        "task": "Editing",
+        "metric": "raster_tolerant_success" if raster else "strict_CSR",
+        "scoring_version": "explicit_direction_and_declared_tolerance_20260910_no_gold_layer",
+        "complete": not missing,
+        "missing_predictions": len(missing),
+        **stats(details),
+        "source_sha256": {"tasks": sha256(tasks_path), "predictions": sha256(predictions_path)},
+    }
+    if conditions := input_conditions(pred.values()):
+        report["input_conditions"] = conditions
+    return save(report, details, out)

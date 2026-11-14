@@ -52,6 +52,15 @@ This uses the fixed case, selects 28 QA scenes and 28 Editing tasks, copies matc
 - `--per-relation 0`: use all 700 scenes per task; the default.
 - `--task qa` or `--task editing`: prepare only one task family.
 
+For optional basemaps, set `GEOAPIFY_API_KEY` ([register](https://myprojects.geoapify.com/)) or `STADIA_API_KEY` ([register](https://client.stadiamaps.com/signup/)) in `.env`; `.env.example` provides the template. Scripts load it automatically, without overriding existing environment variables.
+
+```sh
+python scripts/prepare_inputs.py --out outputs/geoapify_preview \
+  --task qa --mode all --per-relation 1 --basemap geoapify
+```
+
+Use `--basemap stadia` for Stadia, or `none` (default) to stay offline. Basemap Editing requires newly generated tasks with `source_frame`; the fixed Editing case has no recorded geographic origin. Stadia uses `static_cacheable` (2,000 credits per new background). [Basemap options and usage terms](docs/PROTOCOL.md#optional-basemaps).
+
 ### 2. Run inference
 
 ```sh
@@ -61,7 +70,7 @@ python scripts/run_inference.py \
   --model YOUR_MODEL --base-url YOUR_API_ROOT --dry-run
 ```
 
-`--dry-run` validates requests locally. To run inference, set `BENCHMARK_API_KEY` and remove that flag. Use `--resume` to continue with unchanged inputs and settings. The runner saves raw responses and retry history; `--api-format responses` selects a Responses endpoint instead of Chat Completions.
+`--dry-run` validates requests locally. To run inference, set `MODEL_API_KEY` in `.env` or your shell and remove that flag. Use `--resume` to continue with unchanged inputs and settings. The runner saves raw responses and retry history; `--api-format responses` selects a Responses endpoint instead of Chat Completions.
 
 Each file covers one task form and one modality. The preview needs 28 requests per file, or 252 across all nine before retries; full inputs need 700 per file, or 6,300 across all nine.
 
@@ -77,7 +86,7 @@ Use `--task qa_mcq4` or `--task editing` for the other forms. To score all three
 
 Set `--mode` to the modality used for inference. Image-only Editing uses `map_annotated` and a [raster-tolerant metric](docs/PROTOCOL.md#offline-images-and-raster-editing) distinct from strict CSR. Missing predictions are rejected unless `--allow-partial` counts them as failures. Reports include per-item details and full-denominator scores.
 
-Image/Together inputs use `offline_metric_v1`, not the paper's OSM-basemap condition. Geometry-only QA omits O06 layer attributes; reports also include information-sufficient subsets.
+Default Image/Together inputs use `offline_metric_v1`, not the paper's OSM-basemap condition. Optional basemaps are recorded as a separate renderer. Geometry-only QA omits O06 layer attributes; reports also include information-sufficient subsets.
 
 ## Generate data
 
@@ -109,6 +118,8 @@ The main workflow uses `generate_data.py`, `prepare_inputs.py`, `run_inference.p
 - `configure_city.py`: create an editable city configuration.
 - `validate_data.py`: check source inputs with `--config`, or reference answers with `--case`.
 - `render_maps.py --case PATH`: render maps without preparing prompts.
+
+Both map-producing scripts accept `--basemap`, `--basemap-style`, `--basemap-zoom` and `--basemap-cache`. `render_maps.py --dry-run` estimates downloads and credits without making requests. Rendering prints scene and download progress; rerunning reuses completed downloads and images.
 
 ```text
 scripts/          Task entry scripts

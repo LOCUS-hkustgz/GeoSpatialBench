@@ -183,6 +183,8 @@ def emit_qa(case, out, mode="geojson_exact", per_relation=0):
                     renderer=metadata["renderer"],
                     frame_sha256=sha256(image_path.with_suffix(".frame.json")),
                 )
+                if "basemap" in metadata:
+                    prompt["basemap"] = metadata["basemap"]
             rows.append(prompt)
         write_rows(Path(out) / f"qa_{form}_{mode}.jsonl", rows)
     return {"items": len(items), "forms": 2, "mode": mode, "full_city_items": len(all_items)}
@@ -233,6 +235,8 @@ def emit_editing(case, out, mode="geojson_exact", per_relation=0):
                 renderer=metadata["renderer"],
                 frame_sha256=sha256(image_path.with_suffix(".frame.json")),
             )
+            if "basemap" in metadata:
+                row["basemap"] = metadata["basemap"]
         rows.append(row)
     write_rows(Path(out) / f"editing_{mode}.jsonl", rows)
     return {"tasks": len(tasks), "mode": mode}

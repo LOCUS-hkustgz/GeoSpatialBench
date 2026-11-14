@@ -32,10 +32,11 @@ def feature_record(
     geom: BaseGeometry,
     semantics: Optional[Dict[str, Any]],
     source_object_id: Any,
+    source_origin: Optional[Tuple[float, float]] = None,
 ) -> Dict[str, Any]:
     """Scene-feature dict consumed by ``constraints.evaluate_edit``."""
     c = geom.centroid
-    return {
+    record = {
         "feature_id": feature_id,
         "geometry_type": geom.geom_type,
         "wkt": geom.wkt,
@@ -47,6 +48,9 @@ def feature_record(
         "semantics": dict(semantics or {}),
         "source_object_id": source_object_id,
     }
+    if source_origin is not None:
+        record["_source_origin"] = list(source_origin)
+    return record
 
 
 # ------------------------------------------------------------------------ pools
